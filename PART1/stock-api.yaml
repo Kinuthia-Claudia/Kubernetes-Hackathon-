@@ -1,0 +1,43 @@
+# stock-api-deployment
+
+apiVersion: apps/v1  # Uses the apps/v1 API version, standard for Deployments
+kind: Deployment  # Declares a Deployment resource to manage a set of replicated Pods
+metadata:
+  name: stock-api  # Unique name for this Deployment
+spec:
+  replicas: 2  # Number of pods to run; scalable for load balancing and availability
+  selector:
+    matchLabels:
+      app: stock-api  # Selector to find pods with this label
+  template:
+    metadata:
+      labels:
+        app: stock-api  # Labels applied to the pods; must match selector above
+    spec:
+      containers:
+      - name: stock-api  # Name of the container within the pod
+        image: widgetario/stock-api:21.03  # Container image with specific version for consistency
+        ports:
+        - containerPort: 8080  # Port that the application listens on inside the container
+        resources:
+          requests:
+            memory: "128Mi"  # Minimum memory guaranteed for the container
+            cpu: "250m"  # Minimum CPU guaranteed (250 millicores)
+          limits:
+            memory: "256Mi"  # Maximum memory the container can use
+            cpu: "500m"  # Maximum CPU the container can use
+
+---
+# stock-api-service
+
+apiVersion: v1  # Core API group for Kubernetes services
+kind: Service  # Declares a Service resource to expose the stock-api pods
+metadata:
+  name: stock-api  # Name of the service for internal access via DNS
+spec:
+  selector:
+    app: stock-api  # Service targets pods with this label
+  ports:
+  - protocol: TCP  # TCP is used for communication
+    port: 8080  # Port exposed by the service within the cluster
+    targetPort: 8080  # Port on the pod/container that traffic should be directed to

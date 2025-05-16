@@ -1,0 +1,43 @@
+# products-db-deployment
+
+apiVersion: apps/v1  # Specifies the use of the apps/v1 API version for deployments
+kind: Deployment  # Defines this resource as a Deployment
+metadata:
+  name: products-db  # Unique name for the deployment
+spec:
+  replicas: 1  # Only one replica needed for a database (stateful service)
+  selector:
+    matchLabels:
+      app: products-db  # Selector used to find matching pods
+  template:
+    metadata:
+      labels:
+        app: products-db  # Labels applied to the pod, must match selector
+    spec:
+      containers:
+      - name: products-db  # Name of the container
+        image: widgetario/products-db:21.03  # Image of the database container with version tag
+        ports:
+        - containerPort: 5432  # Standard PostgreSQL port exposed by the container
+        resources:
+          requests:
+            memory: "256Mi"  # Minimum guaranteed memory
+            cpu: "250m"  # Minimum guaranteed CPU
+          limits:
+            memory: "512Mi"  # Max memory usage allowed
+            cpu: "500m"  # Max CPU usage allowed
+
+---
+# products-db-service
+
+apiVersion: v1  # API version for the Service resource
+kind: Service  # Defines this resource as a Service
+metadata:
+  name: products-db  # Name of the service, used for internal DNS discovery
+spec:
+  selector:
+    app: products-db  # Targets pods with this label; must match deployment
+  ports:
+  - protocol: TCP  # Protocol for communication (PostgreSQL uses TCP)
+    port: 5432  # Port exposed internally by the service
+    targetPort: 5432  # Port on the container the service should forward traffic to

@@ -1,0 +1,44 @@
+# web-deployment
+
+apiVersion: apps/v1  # Specifies the Kubernetes API version used for the Deployment
+kind: Deployment  # Declares this resource as a Deployment
+metadata:
+  name: web  # Unique name for the Deployment object
+spec:
+  replicas: 3  # Number of pod replicas to run concurrently (ensures availability and load balancing)
+  selector:
+    matchLabels:
+      app: web  # Matches pods with this label for the Deployment to manage
+  template:
+    metadata:
+      labels:
+        app: web  # Labels attached to pods created by this Deployment
+    spec:
+      containers:
+      - name: web  # Name of the container in the pod
+        image: widgetario/web:21.03  # Docker image used for this web container, version pinned for consistency
+        ports:
+        - containerPort: 8080  # Internal port the web container listens on
+        resources:
+          requests:
+            memory: "64Mi"  # Minimum guaranteed memory
+            cpu: "250m"  # Minimum guaranteed CPU (250 millicores)
+          limits:
+            memory: "128Mi"  # Maximum memory the container can use
+            cpu: "500m"  # Maximum CPU the container can use
+
+---
+# web-service
+
+apiVersion: v1  # Uses the core API group for the Service resource
+kind: Service  # Declares a Service to expose the `web` pods
+metadata:
+  name: web  # Name of the service, also used for internal DNS (e.g., web.default.svc.cluster.local)
+spec:
+  selector:
+    app: web  # Matches pods with this label to route traffic to
+  ports:
+    - protocol: TCP  # Protocol used by the service
+      port: 80  # External port exposed to consumers (e.g., browsers)
+      targetPort: 80  # Port on the container the traffic will be forwarded to (note: mismatch alert — see below)
+  type: LoadBalancer  # Exposes the service externally using a cloud provider’s load balancer (e.g., AWS ELB)

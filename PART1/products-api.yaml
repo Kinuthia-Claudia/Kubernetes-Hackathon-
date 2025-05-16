@@ -1,0 +1,43 @@
+# products-api-deployment
+
+apiVersion: apps/v1  # Specifies this is a Deployment resource using the apps/v1 API version
+kind: Deployment  # Defines the type of Kubernetes resource
+metadata:
+  name: products-api  # Name of the Deployment; should be unique within the namespace
+spec:
+  replicas: 3  # Number of pod replicas to run for high availability and load balancing
+  selector:
+    matchLabels:
+      app: products-api  # Selector to match pods with this label for deployment control
+  template:
+    metadata:
+      labels:
+        app: products-api  # Labels applied to pods; must match selector above
+    spec:
+      containers:
+      - name: products-api  # Name of the container
+        image: widgetario/products-api:21.03  # Container image with specific version tag
+        ports:
+        - containerPort: 80  # The port the container exposes to the network
+        resources:
+          requests:
+            memory: "128Mi"  # Guaranteed minimum memory the container will get
+            cpu: "250m"  # Guaranteed minimum CPU (250 millicores)
+          limits:
+            memory: "256Mi"  # Maximum memory allowed for this container
+            cpu: "500m"  # Maximum CPU allowed (500 millicores); container throttled if exceeded
+
+---
+# products-api-service
+
+apiVersion: v1  # Core API version for a Service resource
+kind: Service  # This defines a Kubernetes Service
+metadata:
+  name: products-api  # Name of the service; used to reference the service in the cluster
+spec:
+  selector:
+    app: products-api  # Targets pods with this label; must match Deployment pod template
+  ports:
+  - protocol: TCP  # Protocol used for the service (default and common)
+    port: 80  # Port exposed by the service internally
+    targetPort: 80  # Port the service routes traffic to on the container
