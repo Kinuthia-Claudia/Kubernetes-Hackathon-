@@ -1,0 +1,70 @@
+
+# Deployment for PostgreSQL database
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: products-db  # Name of the deployment
+  labels:
+    app: widgetario  # App group label
+    kubernetes.courselabs.co: hackathon  # Custom label for course/hackathon tracking
+spec:
+  selector:
+    matchLabels:
+      app: widgetario
+      component: products-db  # Deployment targets pods with this label
+  template:
+    metadata:
+      labels:
+        app: widgetario
+        component: products-db
+        hackathon: part-2  # Additional label for organizing or filtering
+    spec:
+      containers:
+      - name: app
+        image: widgetario/products-db:21.03  # Custom PostgreSQL image used
+        ports:
+        - containerPort: 5432  # Exposes the default PostgreSQL port
+          name: postgres
+          protocol: TCP
+        env:
+        - name: POSTGRES_PASSWORD  # Environment variable for DB password
+          valueFrom:
+            secretKeyRef:
+              name: products-db-password  # Reference to secret holding password
+              key: POSTGRES_PASSWORD
+
+---
+
+
+# Service to expose PostgreSQL inside the cluster
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: products-db  # Name of the service
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  ports:
+  - port: 5432  # Service port exposed inside the cluster
+    targetPort: postgres  # Targets the container port named "postgres"
+  selector:
+    app: widgetario
+    component: products-db  # Routes traffic to the right pod
+  type: ClusterIP  # Default type - accessible only within the cluster
+
+---
+
+
+# Secret for PostgreSQL password
+apiVersion: v1
+kind: Secret
+metadata:
+  name: products-db-password  # Secret name used in Deployment
+  labels:
+    kubernetes.courselabs.co: hackathon
+type: Opaque  # Generic key-value secret
+stringData:
+  POSTGRES_PASSWORD: SecureDistributedSystemGroup4  # Password for the PostgreSQL DB

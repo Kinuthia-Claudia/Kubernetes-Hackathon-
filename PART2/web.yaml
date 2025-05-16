@@ -1,0 +1,78 @@
+
+# ConfigMap: Defines non-sensitive configuration
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-features  # Name used to reference this ConfigMap
+  labels:
+    kubernetes.courselabs.co: hackathon
+data:
+  Widgetario__Theme: dark  # Sets the theme of the frontend to dark mode via environment variable
+
+---
+
+
+# Deployment: Runs the web frontend pod
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web  # Name of the Deployment
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  selector:
+    matchLabels:
+      app: widgetario
+      component: web  # Targets pods with this label
+  template:
+    metadata:
+      labels:
+        app: widgetario
+        component: web
+        hackathon: part-2  # Helps identify which task or phase this belongs to
+    spec:
+      containers:
+      - name: app
+        image: widgetario/web:21.03  # Docker image for the frontend
+        ports:
+        - containerPort: 80  # Exposes HTTP on port 80
+          name: http
+        envFrom:
+        - configMapRef:
+            name: web-features  # Injects all key-value pairs from ConfigMap as env vars
+        volumeMounts:
+        - name: api-config
+          mountPath: "/app/secrets/api.json"  # Mounts a secret file inside the container
+          subPath: api.json  # Ensures only the api.json file is mounted, not the whole secret as a directory
+      volumes:
+      - name: api-config
+        secret:
+          secretName: web-api  # References the secret that contains API endpoint configuration
+
+---
+
+
+# Secret: Stores sensitive API URLs as JSON
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: web-api  # Secret name used in the volume mount
+  labels:
+    kubernetes.courselabs.co: hackathon
+type: Opaque
+stringData:
+  api.json: |-  # Secret stores the URLs to the backend APIs 
+    {
+      "Widgetario": {
+        "ProductsApi": {
+          "Url": "http://products-api:80/products"
+        },
+        "StockApi": {
+          "Url": "http://stock-api:8080/stock"
+        }
+      }
+    }

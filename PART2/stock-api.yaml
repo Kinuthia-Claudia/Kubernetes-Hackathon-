@@ -1,0 +1,54 @@
+
+# Deployment for stock-api service
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock-api  # Unique name for the Deployment
+  labels:
+    app: widgetario  # Common app label
+    kubernetes.courselabs.co: hackathon  # Label for tracking with courselabs
+spec:
+  selector:
+    matchLabels:
+      app: widgetario
+      component: stock-api  # Ensures pods with this label are managed by this deployment
+  template:
+    metadata:
+      labels:
+        app: widgetario
+        component: stock-api  # Pod will carry this label for service matching
+        hackathon: part-2  # Optional label for organization or grouping
+    spec:
+      containers:
+      - name: app
+        image: widgetario/stock-api:21.03  # Docker image for the stock API
+        ports:
+        - containerPort: 8080  # The container exposes this port
+          name: http  # Port name used by the service to target it
+          protocol: TCP
+        env:
+        - name: POSTGRES_CONNECTION_STRING  # Environment variable for DB connection
+          value: "host=products-db port=5432 user=postgres password=SecureDistributedSystemGroup4 dbname=postgres sslmode=disable"
+       
+
+---
+
+
+# Service to expose stock-api 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-api  # Name of the service
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  ports:
+  - port: 8080  # Port exposed by the service
+    targetPort: http  # Forwards traffic to container port named "http"
+  selector:
+    app: widgetario
+    component: stock-api  # Matches pods with this label
+  type: ClusterIP  # Only accessible inside the Kubernetes cluster

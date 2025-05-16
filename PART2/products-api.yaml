@@ -1,0 +1,82 @@
+
+# Deployment for products-api
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: products-api  # Deployment name
+  labels:
+    app: widgetario
+    kubernetes.courselabs.co: hackathon
+spec:
+  selector:
+    matchLabels:
+      app: widgetario
+      component: products-api  # Target pods with this label
+  template:
+    metadata:
+      labels:
+        app: widgetario
+        component: products-api
+        hackathon: part-2
+    spec:
+      containers:
+      - name: app
+        image: widgetario/products-api:21.03  # Container image for the API
+        ports:
+        - containerPort: 80
+          name: http  # Named port used in service targetPort
+          protocol: TCP
+        volumeMounts:
+        - name: config-volume
+          mountPath: "/app/config/application.properties"
+          subPath: "application.properties"  # Mount just one file from the secret
+        env:
+        - name: SPRING_DATASOURCE_PASSWORD  # Inject password as env var
+          valueFrom:
+            secretKeyRef:
+              name: products-api-db  # Secret containing the password
+              key: datasource_password
+      volumes:
+      - name: config-volume
+        secret:
+          secretName: products-api-db  # Secret containing application.properties
+
+---
+
+
+# Service to expose products-api
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: products-api
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  ports:
+  - port: 80  # Exposes port 80 internally in the cluster
+    targetPort: http  # Targets the container's named port
+  selector:
+    app: widgetario
+    component: products-api
+  type: ClusterIP  # Internal-only access
+
+---
+
+
+# Secret with DB config and password
+apiVersion: v1
+kind: Secret
+metadata:
+  name: products-api-db
+type: Opaque
+stringData:
+  application.properties: |-  # Configuration file for Spring Boot app
+    spring.jpa.database=POSTGRESQL
+    spring.datasource.platform=postgres
+    spring.datasource.url=jdbc:postgresql://products-db:5432/postgres
+    spring.datasource.username=postgres
+    spring.datasource.password=SecureDistributedSystemGroup4
+  datasource_password: SecureDistributedSystemGroup4  # Used in env var
