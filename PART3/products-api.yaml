@@ -1,0 +1,70 @@
+#Deployment 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: products-api
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: widgetario
+      component: products-api
+  template:
+    metadata:
+      labels:
+        app: widgetario
+        component: products-api
+    spec:
+      containers:
+        - name: app
+          image: widgetario/products-api:21.03
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: db-properties
+              mountPath: "/app/config"
+              readOnly: true
+      volumes:
+        - name: db-properties
+          secret:
+            secretName: products-api-db
+
+---
+#Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: products-api
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  ports:
+    - port: 80
+      targetPort: http
+  selector:
+    app: widgetario
+    component: products-api
+  type: ClusterIP
+
+---
+# Secret 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: products-api-db
+  labels:
+    kubernetes.courselabs.co: hackathon
+type: Opaque
+stringData:
+  application.properties: |-
+    spring.jpa.database=POSTGRESQL
+    spring.datasource.platform=postgres
+    spring.datasource.url=jdbc:postgresql://products-db.products-db.default.svc.cluster.local:5432/postgres
+    spring.datasource.username=postgres
+    spring.datasource.password=h4ckkath0n
+    spring.jpa.hibernate.ddl-auto=update

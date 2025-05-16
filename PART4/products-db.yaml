@@ -1,0 +1,46 @@
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: products-db
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: widgetario
+      component: products-db
+  template:
+    metadata:
+      labels:
+        app: widgetario
+        component: products-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:13
+          env:
+            - name: POSTGRES_PASSWORD
+              value: h4ckkath0n
+          ports:
+            - containerPort: 5432
+              name: postgres
+
+---
+#Service 
+apiVersion: v1
+kind: Service
+metadata:
+  name: products-db
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: widgetario
+    component: products-db
+  type: ClusterIP

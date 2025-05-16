@@ -1,0 +1,44 @@
+# Deployment 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: widgetario-web
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: widgetario
+      component: web
+  template:
+    metadata:
+      labels:
+        app: widgetario
+        component: web
+    spec:
+      containers:
+        - name: web
+          image: widgetario/web-frontend:21.03
+          ports:
+            - containerPort: 80
+              name: http
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: widgetario-web
+  labels:
+    kubernetes.courselabs.co: hackathon
+    app: widgetario
+spec:
+  ports:
+    - port: 80
+      targetPort: http
+  selector:
+    app: widgetario
+    component: web
+  type: ClusterIP
